@@ -1,23 +1,38 @@
-Shader "Unlit/Phong"
+Shader "Unlit/Fresnel"
 {
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        _Gloss("Gloss", float) = 1
+        _Color("Colour", color) = (1,1,1,1)
+        _Strength("Strength", range(0,10)) = 0.5
     }
     SubShader
     {
-        Tags
-        {
-            "RenderType"="Opaque"
-        }
-        LOD 100
+        Tags { "RenderType"="Opaque" "Queue" = "Transparent" }
+        
 
         Pass
         {
+            ZTest GEqual //LEqual 
+            //Cull Back // Front // Off
+            //Zwrite Off 
+            
+            //ADDITIVE BLENDING
+            //Blend One One 
+            //Blend SrcAlpha OneMinusSrcAlpha // Traditional Transparency
+            //Blend One OneMinusSrcAlpha //Premultiplied transparency
+            //Blend DstColor Zero //Multiplicative
+            //Blend DstColor SrcColor
+            //BlendOp RevSub // Add // Subtract DST - SRC
+            //BlendOp Sub // SRC - DST
+            //BlendOp ADD // SRC + DST
+            //Blend OneMinusDstColor One // Soft Additive
+            //Blend One One  
+            
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+           
 
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
@@ -33,15 +48,16 @@ Shader "Unlit/Phong"
             {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
-                float3 normal : TEXCOORD1;
+                float3 normal : TEXTCOORD1;
                 float3 worldPosition : TEXCOORD2;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
-            float _Gloss;
+            float4 _Color;
+            float _Strength;
 
-            v2f vert(appdata v)
+            v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
@@ -51,17 +67,12 @@ Shader "Unlit/Phong"
                 return o;
             }
 
-            fixed4 frag(v2f i) : SV_Target
+            fixed4 frag (v2f i) : SV_Target
             {
                 float3 N = normalize(i.normal);
-                float3 L = _WorldSpaceLightPos0.xyz;
-
                 float3 V = normalize(_WorldSpaceCameraPos - i.worldPosition);
-                float3 R = reflect (-L, N);
-
-                float3 specularLight = saturate(dot(V,R));
-                specularLight = pow(specularLight,_Gloss);
-                return float4(specularLight,1);
+                float fresnel = pow(saturate(1 - dot(V,N)), _Strength);
+                return float4(fresnel.xxx * _Color, 0.5);
             }
             ENDCG
         }

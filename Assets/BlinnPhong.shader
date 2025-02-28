@@ -1,4 +1,4 @@
-Shader "Unlit/Phong"
+Shader "Unlit/BlinnPhong"
 {
     Properties
     {
@@ -57,9 +57,10 @@ Shader "Unlit/Phong"
                 float3 L = _WorldSpaceLightPos0.xyz;
 
                 float3 V = normalize(_WorldSpaceCameraPos - i.worldPosition);
-                float3 R = reflect (-L, N);
+                //float3 R = reflect (-L, N);
+                float3 H =  normalize(L+V);
 
-                float3 specularLight = saturate(dot(V,R));
+                float3 specularLight = saturate(dot(H,N)); //* (dot(L,N) > 0);
                 specularLight = pow(specularLight,_Gloss);
                 return float4(specularLight,1);
             }
