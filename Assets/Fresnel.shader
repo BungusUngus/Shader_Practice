@@ -8,15 +8,18 @@ Shader "Unlit/Fresnel"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue" = "Transparent" }
-        
+        Tags
+        {
+            "RenderType"="Transparent" "Queue" = "Transparent"
+        }
+
 
         Pass
         {
             ZTest GEqual //LEqual 
             //Cull Back // Front // Off
             //Zwrite Off 
-            
+
             //ADDITIVE BLENDING
             //Blend One One 
             //Blend SrcAlpha OneMinusSrcAlpha // Traditional Transparency
@@ -28,11 +31,11 @@ Shader "Unlit/Fresnel"
             //BlendOp ADD // SRC + DST
             //Blend OneMinusDstColor One // Soft Additive
             //Blend One One  
-            
+
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-           
+
 
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
@@ -57,7 +60,7 @@ Shader "Unlit/Fresnel"
             float4 _Color;
             float _Strength;
 
-            v2f vert (appdata v)
+            v2f vert(appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
@@ -67,12 +70,14 @@ Shader "Unlit/Fresnel"
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
                 float3 N = normalize(i.normal);
                 float3 V = normalize(_WorldSpaceCameraPos - i.worldPosition);
-                float fresnel = pow(saturate(1 - dot(V,N)), _Strength);
-                return float4(fresnel.xxx * _Color, 0.5);
+                float fresnel = 1 - dot(V, N);
+                fresnel *= (cos(_Time.y * 4) * 0.5 + 0.5);
+                fresnel = pow(saturate(fresnel), _Strength);
+                return float4(fresnel.xxx * _Color, fresnel.x);
             }
             ENDCG
         }
